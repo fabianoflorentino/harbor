@@ -1,1 +1,1 @@
-# CNCF
+# Harbor Container Registry by Ansible
