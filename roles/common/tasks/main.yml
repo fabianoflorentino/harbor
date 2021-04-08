@@ -1,0 +1,58 @@
+---
+- name: Update Instance
+  yum:
+    update_cache: yes
+    state: latest
+    name: '*'
+
+- name: Common Packages
+  yum:
+    state: present
+    name: "{{ item }}"
+  loop: "{{ packages.to_install }}"
+
+- name: Install Pip Modules
+  pip:
+    executable: pip3
+    name: "{{ item }}"
+  loop: "{{ pip.to_install }}"
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+
+- name: Enable Services
+  systemd:
+    name: "{{ item }}"
+    enabled: yes
+    state: started
+  loop: "{{ services.to_enabled }}"
+
+- name: Disabled Services
+  systemd:
+    name: "{{ item }}"
+    enabled: no
+    state: stopped
+  loop: "{{ services.to_disabled }}"
+
+- name: Remove Swap Filesystem
+  mount:
+    name: swap
+    fstype: swap
+    state: absent
+
+- name: Check Swapoff
+  stat:
+    path: /tmp/swappoff.log
+  register: swapp_off
+
+- name: Disable Swap
+  shell:
+    cmd: swapoff -a >> /tmp/swappoff.log 2>&1
+  args:
+    executable: /bin/bash
+    chdir: /tmp
+    creates: swapoff.log
+  when: swapp_off.stat.exists == false
+
+- name: Disable SELinux
+  ansible.posix.selinux:
+    state: disabled

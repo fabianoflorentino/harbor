@@ -1,0 +1,62 @@
+---
+
+# Determine if a path exists and is a directory.  Note that we need to test
+# both that p.stat.isdir actually exists, and also that it's set to true.
+- name: Get stats of the Harbor Download
+  ansible.builtin.stat:
+    path: /tmp/harbor
+  register: p
+
+- name: Add Harbor Entry
+  ansible.builtin.lineinfile:
+    path: /etc/hosts
+    line: "{{ ansible_default_ipv4.address }} {{ attr.registry_common_name }}"
+    owner: root
+    group: root
+    mode: '0644'
+  when: p.stat.isdir is defined and p.stat.isdir
+
+- name: Configure Registry on Docker
+  template:
+    src: daemon.json.j2
+    dest: /etc/docker/daemon.json
+    owner: root
+    group: root
+    mode: '0644'
+  notify: 
+    - "Restart Docker"
+    - "Restart Harbor Stack"
+
+- name: Download Harbor
+  ansible.builtin.unarchive:
+    src: "{{ harbor_url }}"
+    dest: /tmp/
+    remote_src: yes
+  when: p.stat.isdir is not defined
+
+- name: Harbor Download Status
+  ansible.builtin.debug:
+    msg: "Harbor is Downloaded"
+  when: p.stat.isdir is defined and p.stat.isdir
+
+- name: Harbor Configure YAML File
+  template:
+    src: harbor.yml.j2
+    dest: /tmp/harbor/harbor.yml
+  when: p.stat.isdir is defined and p.stat.isdir
+  notify:
+    - "Restart Harbor Stack"
+
+- name: Install Harbor
+  shell: |
+    /tmp/harbor/install.sh --with-notary --with-chartmuseum \
+    > /tmp/harbor/install.out
+  args:
+    executable: /bin/bash
+    creates: /tmp/harbor/install.out
+  register: harbor_install_out
+
+- name: Harbor Install Stats
+  ansible.builtin.debug:
+    msg: "{{ harbor_install_out }}"
+  when: p.stat.isdir is defined and p.stat.isdir

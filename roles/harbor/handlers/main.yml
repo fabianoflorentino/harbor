@@ -1,0 +1,14 @@
+---
+
+- name: Restart Docker
+  ansible.builtin.systemd:
+    name: docker
+    state: restarted
+
+- name: Restart Harbor Stack
+  shell: |
+    cd /tmp/harbor
+    docker-compose stop
+    docker-compose up -d
+  args:
+    executable: /bin/bash
