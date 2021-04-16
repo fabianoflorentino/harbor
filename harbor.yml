@@ -1,5 +1,5 @@
 ---
-- name: CNCF Chanllenge by Matheus Fidelis
+- name: Deploy New Harbor Container Registry
   hosts:
     - harbor
   gather_facts: True
