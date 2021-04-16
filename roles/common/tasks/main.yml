@@ -13,11 +13,11 @@
 
 - name: Install Pip Modules
   pip:
-    executable: pip3
+    executable: pip
     name: "{{ item }}"
   loop: "{{ pip.to_install }}"
   vars:
-    ansible_python_interpreter: /usr/bin/python3
+    ansible_python_interpreter: /usr/bin/python
 
 - name: Enable Services
   systemd:
@@ -54,5 +54,5 @@
   when: swapp_off.stat.exists == false
 
 - name: Disable SELinux
-  ansible.posix.selinux:
+  selinux:
     state: disabled
